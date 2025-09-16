@@ -14,6 +14,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import uploadHandler from "@/pages/api/upload";
 import cors from "cors";
+
 // -----------------------------------------------------------------------------
 // JWT Secret
 // -----------------------------------------------------------------------------
@@ -30,16 +31,19 @@ if (JWT_SECRET.length < 32) {
 }
 
 
-// put this before app.use(express.json(...)) and before any routes
-const FRONTEND_ORIGIN = process.env.FRONTEND_URL || "https://your-frontend.onrender.com";
+// Frontend origin (must be exact when using credentials)
+const FRONTEND_ORIGIN =
+  process.env.FRONTEND_URL || "https://your-frontend.onrender.com"; // [web:175][web:179]
 
+// CORS options: allow credentials and common methods/headers
 const corsOptions: cors.CorsOptions = {
-  origin: FRONTEND_ORIGIN,           // exact origin, not *
-  credentials: true,                 // allow cookies/Authorization with credentials: 'include'
-  methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
-  allowedHeaders: ["Content-Type","Authorization"],
-  optionsSuccessStatus: 204
+  origin: FRONTEND_ORIGIN,                 // exact origin, not * [web:175]
+  credentials: true,                       // needed because client sends credentials: 'include' [web:176]
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], // [web:176]
+  allowedHeaders: ["Content-Type", "Authorization"],             // [web:176]
+  optionsSuccessStatus: 204,               // OK for legacy browsers [web:176]
 };
+
 
 // -----------------------------------------------------------------------------
 // Cloudinary
@@ -864,6 +868,10 @@ message: 'Failed to delete account'
     }
   });
 
+// Register CORS BEFORE any body parsers or routes
+app.use(cors(corsOptions));                // applies to all routes and handles preflight [web:176][web:186]
+app.options("*", cors(corsOptions));       // optional when using app.use(cors(...)), harmless if kept [web:201]
+
   // =========================
   // Registration / Login
   // =========================
@@ -1114,10 +1122,6 @@ app.get("/api/auth/user", authenticate, async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 });
-
-app.use(cors(corsOptions));
-// ensure preflight for all routes succeeds
-app.options("*", cors(corsOptions));
 
   // =========================
   // Books
