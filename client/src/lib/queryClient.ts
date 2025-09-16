@@ -22,7 +22,7 @@ function toHttpError(res: Response, body: any): Error {
 // == API BASE URL ==
 // Use env for production and localhost for dev; NEXT_PUBLIC_* is exposed to the browser in Next.js.
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:3000"; // [web:83][web:144]
+  process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-backend.onrender.com"; // [web:83][web:144]
 
 // Optional guard to fail fast if missing in production builds.
 if (
