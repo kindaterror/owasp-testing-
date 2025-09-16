@@ -30,23 +30,6 @@ if (JWT_SECRET.length < 32) {
   console.warn("⚠️  JWT_SECRET is too short. Consider using a longer, more secure key.");
 }
 
- // Frontend origin (must be exact when using credentials)
-const FRONTEND_ORIGIN =
-  process.env.FRONTEND_URL || "https://your-frontend.onrender.com"; // [web:175][web:179]
-
-// CORS options: allow credentials and common methods/headers
-const corsOptions: cors.CorsOptions = {
-  origin: FRONTEND_ORIGIN,                 // exact origin, not * [web:175]
-  credentials: true,                       // needed because client sends credentials: 'include' [web:176]
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], // [web:176]
-  allowedHeaders: ["Content-Type", "Authorization"],             // [web:176]
-  optionsSuccessStatus: 204,               // OK for legacy browsers [web:176]
-};
-
-// Register CORS BEFORE any body parsers or routes
-app.use(cors(corsOptions));                // applies to all routes and handles preflight [web:176][web:186]
-app.options("*", cors(corsOptions));       // optional when using app.use(cors(...)), harmless if kept [web:201]
-
 // -----------------------------------------------------------------------------
 // Cloudinary
 // -----------------------------------------------------------------------------
@@ -160,13 +143,26 @@ const normalizeSubjects = (arr: unknown): string[] => {
 
 // ✅ add near your other helpers
 const isStorybookSubject = (s?: string) => !!s && /^storybook(s)?$/i.test(s.trim());
+// Frontend origin (must be exact when using credentials)
+const FRONTEND_ORIGIN =
+  process.env.FRONTEND_URL || "https://your-frontend.onrender.com"; // [web:175][web:179]
 
+// CORS options: allow credentials and common methods/headers
+const corsOptions: cors.CorsOptions = {
+  origin: FRONTEND_ORIGIN,                 // exact origin, not * [web:175]
+  credentials: true,                       // needed because client sends credentials: 'include' [web:176]
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], // [web:176]
+  allowedHeaders: ["Content-Type", "Authorization"],             // [web:176]
+  optionsSuccessStatus: 204,               // OK for legacy browsers [web:176]
+};
 
 // -----------------------------------------------------------------------------
 // Routes
 // -----------------------------------------------------------------------------
 export function setupRoutes(app: Express): Server {
   // NOTE: do NOT serve local /uploads here since we’re using Cloudinary now.
+  app.use(cors(corsOptions));                   // applies to all routes and preflight
+  app.options("*", cors(corsOptions));          // optional, harmless if kept
 
   // =========================
   // Profile
