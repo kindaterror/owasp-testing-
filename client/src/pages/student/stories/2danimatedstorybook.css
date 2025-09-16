@@ -1,0 +1,434 @@
+/* ========================================================================== */
+/* 2D Animated Storybook — Clean, Book-like, Centered (Windowed + Fullscreen) */
+/* ========================================================================== */
+
+/* -------------------------- Root scale variables -------------------------- */
+:root{
+  --popup-book-width: 85vw;     /* legacy vars kept for safety */
+  --popup-book-height: 90vh;
+  --popup-book-min-height: 750px;
+  --popup-book-left: 50%;
+  --popup-book-top: 50%;
+  --popup-book-rotate-x: 30deg;
+  --popup-book-rotate-y: 0deg;
+  --popup-book-perspective: 5000px;
+
+  /* if you have a fixed header in windowed view, set its height here */
+  --header-offset: 160px;       /* tweak to your actual header height */
+
+  /* NEW: fullscreen vertical nudge (push book a bit lower) */
+  --fs-nudge: 3svh;             /* try 2–5svh to taste */
+}
+
+/* ------------------------ Reader shells & containers ---------------------- */
+.popup-book-reader-container{
+  position:relative;
+  width:100vw;
+  height:100vh;
+  overflow:visible;             /* prevents bottom clipping in windowed view */
+}
+
+/* Fullscreen shell: the ONLY thing that controls centering in FS */
+.popup-book-reader-fullscreen{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100svh !important;
+  display:flex !important;          /* center */
+  align-items:center !important;    /* center */
+  justify-content:center !important;/* center */
+  background:#fff !important;
+  overflow:hidden !important;
+  z-index:50 !important;
+
+  /* Nudge the content slightly downward in FS */
+  box-sizing:border-box !important;
+  padding-top:var(--fs-nudge) !important;
+}
+
+/* Lock document scroll in fullscreen */
+html.book-fullscreen-mode,
+body.book-fullscreen-mode{
+  overflow:hidden !important;
+  background:#fff !important;
+}
+
+/* Base book container (flat 2D) */
+.popup-book-container{
+  position:relative;
+  perspective:none !important;
+  perspective-origin:center center !important;
+  width:100%;
+  margin:0 auto;
+}
+
+/* The visible “book” frame */
+.popup-book-wrapper{
+  width:100%;
+  height:100%;
+  background-color:#E6D7C3;
+  border-radius:12px;
+  border-bottom:12px solid rgba(139,69,19,1);
+  border-left:4px solid rgba(139,69,19,0.8);
+  border-right:4px solid rgba(139,69,19,0.8);
+  box-shadow:
+    0 40px 80px rgba(26,35,126,0.35),
+    0 25px 50px rgba(26,35,126,0.30),
+    0 15px 30px rgba(26,35,126,0.25);
+  overflow:visible;
+  display:flex;
+}
+
+/* Ground shadow */
+.popup-book-surface{
+  position:absolute;
+  bottom:-18px;
+  left:50%;
+  transform:translateX(-50%) rotateX(90deg);
+  width:82%;
+  height:54px;
+  background:radial-gradient(ellipse at center,
+              rgba(26,35,126,0.20) 0%,
+              rgba(26,35,126,0.12) 50%,
+              transparent 90%);
+  border-radius:50%;
+  z-index:-1;
+}
+
+/* ========================================================================== */
+/* WINDOWED/NORMAL VIEW                                                       */
+/* ========================================================================== */
+
+/* Flat, centered by margins, with a *spread* aspect ratio (~book shape) */
+.popup-flip-book-container:not(.book-fullscreen-mode .popup-flip-book-container){
+  transform:none !important;              /* kill 3D tilt */
+  aspect-ratio:3 / 2;                     /* open-book spread */
+  width:min(1300px, 94vw) !important;
+  height:auto !important;
+  max-height:calc(100svh - var(--header-offset)) !important; /* avoid clipping */
+  margin:0 auto !important;
+}
+
+/* ========================================================================== */
+/* FULLSCREEN VIEW                                                            */
+/* ========================================================================== */
+
+/* Neutralize any earlier absolute/translate rules so centering works */
+.book-fullscreen-mode .popup-open-book-wrapper,
+.book-fullscreen-mode .popup-book-container,
+.book-fullscreen-mode .popup-flip-book-container{
+  position:relative !important;
+  inset:auto !important;
+  left:auto !important;
+  top:auto !important;
+  transform:none !important;
+  translate:none !important;
+  perspective:none !important;
+  margin:0 auto !important;
+}
+
+/* Use the wrapper as the centering stage and apply the same nudge */
+.book-fullscreen-mode .popup-open-book-wrapper{
+  position:fixed !important;
+  inset:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  margin:0 !important;
+  padding:var(--fs-nudge) 0 0 0 !important;  /* <— same nudge here */
+  z-index:3 !important;
+  box-sizing:border-box !important;
+}
+
+/* Book size in fullscreen: large but capped; keeps a booky spread ratio */
+.book-fullscreen-mode .popup-flip-book-container{
+  aspect-ratio:3 / 2;
+  width:min(1600px, 96vw) !important;
+  height:auto !important;
+  /* reduce max-height by the nudge so nothing clips */
+  max-height:calc(92svh - var(--fs-nudge)) !important;
+}
+
+/* Inner frame matches container */
+.book-fullscreen-mode .popup-book-wrapper{
+  width:100% !important;
+  height:100% !important;
+  transform:none !important;
+  background-color:#E6D7C3 !important;
+}
+
+/* In FS the ground shadow can feel heavy, so hide it */
+.book-fullscreen-mode .popup-book-surface{ display:none !important; }
+
+/* ========================================================================== */
+/* PAGES (2D layout)                                                          */
+/* ========================================================================== */
+
+.popup-page-left,
+.popup-page-right{
+  width:50% !important;
+  height:100% !important;
+  position:relative !important;
+  background-color:#E6D7C3 !important;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  padding:32px 36px 48px !important;
+  gap:18px !important;
+}
+.popup-page-left{  border-right:2px solid rgba(139,69,19,0.3); z-index:1; }
+.popup-page-right{ border-left:2px solid rgba(139,69,19,0.3); z-index:2; }
+
+/* Content containers stay transparent (so page bg shows) */
+.popup-page-left .story-content,
+.popup-page-right .story-content,
+.popup-page-left .page-content,
+.popup-page-right .page-content{ background:transparent !important; }
+
+/* Illustration band + text */
+.page-illustration{
+  width:100%;
+  aspect-ratio:16 / 9;
+  border-radius:12px !important;
+  overflow:hidden;
+  box-shadow:0 6px 18px rgba(0,0,0,0.12);
+}
+.page-illustration img{
+  width:100%;
+  height:100%;
+  object-fit:cover; /* set to contain if you never want cropping */
+  display:block;
+}
+.page-text{ width:100%; display:block; }
+.page-text .story-title{ margin-top:2px; }
+
+/* Optional center spine (disabled in FS) */
+.popup-book-fold{
+  position:absolute;
+  height:100%;
+  width:4px;
+  left:50%;
+  top:0;
+  transform:translateX(-50%);
+  background:linear-gradient(to bottom,
+            rgba(139,69,19,0.8) 0%,
+            rgba(139,69,19,0.6) 50%,
+            rgba(139,69,19,0.8) 100%);
+  z-index:10;
+  border-radius:2px;
+  pointer-events:none !important;
+}
+.book-fullscreen-mode .popup-book-fold{ display:none !important; }
+
+/* ========================================================================== */
+/* FLOATING ILLUSTRATIONS                                                     */
+/* ========================================================================== */
+
+.popup-floating-illustrations{
+  position:fixed !important;
+  inset:0;
+  z-index:20;
+  pointer-events:none;
+  transform:none !important;
+}
+
+.popup-floating-illustration{
+  position:absolute;
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  opacity:0;
+  transition:opacity .8s cubic-bezier(.25,.46,.45,.94) !important;
+  box-shadow:
+    0 25px 60px rgba(0,0,0,.35),
+    0 15px 35px rgba(0,0,0,.25),
+    0 8px 20px rgba(0,0,0,.18);
+  border-radius:16px 16px 0 0;
+  /* mask (Chromium/Firefox) */
+  mask-image:radial-gradient(120% 100% at 50% 55%, #000 60%, rgba(0,0,0,.85) 80%, transparent 100%);
+  mask-mode:luminance;
+  mask-repeat:no-repeat;
+  mask-size:100% 100%;
+  /* mask (Safari/iOS) */
+  -webkit-mask-image:radial-gradient(120% 100% at 50% 55%, #000 60%, rgba(0,0,0,.85) 80%, transparent 100%);
+  -webkit-mask-repeat:no-repeat;
+  -webkit-mask-size:100% 100%;
+}
+@supports not (mask-image: radial-gradient(circle, #000, transparent)){
+  .popup-floating-illustration::after{
+    content:"";
+    position:absolute; inset:0;
+    pointer-events:none; border-radius:inherit;
+    box-shadow:
+      inset 0 40px 60px rgba(0,0,0,.35),
+      inset 0 -40px 60px rgba(0,0,0,.35),
+      inset 40px 0 60px rgba(0,0,0,.35),
+      inset -40px 0 60px rgba(0,0,0,.35);
+  }
+}
+.popup-floating-illustration.active{ opacity:1; }
+
+/* Basic placements (tweak per scene as needed) */
+.popup-floating-illustration.scene-illustration{     top:2.5%; left:17%; width:66%; height:66%; }
+.popup-floating-illustration.character-illustration{ top:8%;   left:15%; width:30%; height:45%; }
+.popup-floating-illustration.object-illustration{    top:8%;   right:5%;  left:auto; width:30%; height:45%; }
+
+/* Dialog under illustration */
+.popup-floating-dialog-container{
+  position:absolute;
+  top:66%;
+  left:22.7%;
+  width:54.5%;
+  max-height:16%;
+  background:#fff;
+  border-radius:12px;
+  padding:10px 24px 16px 24px;
+  box-shadow:
+    0 4px 20px rgba(0,0,0,.08),
+    0 2px 8px rgba(0,0,0,.04),
+    0 1px 3px rgba(0,0,0,.06);
+  border:1px solid rgba(220,220,230,.6);
+  z-index:999;
+  transition:all .3s ease;
+  overflow:hidden;
+}
+
+/* Fullscreen dialog centered relative to the book */
+.book-fullscreen-mode .popup-floating-dialog-container{
+  position:absolute !important;
+  top:66% !important;
+  left:50% !important;
+  transform:translate(-50%, 0) !important;
+  width:min(800px, 70vw) !important;
+  z-index:1000 !important;
+}
+
+/* ========================================================================== */
+/* NAV BUTTONS + PROGRESS BAR                                                 */
+/* ========================================================================== */
+
+.popup-page-nav-left,
+.popup-page-nav-right{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  width:50px; height:50px; border-radius:50%;
+  background:rgba(255,255,255,.15);
+  border:1px solid rgba(255,255,255,.25);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all .3s ease;
+  z-index:25;
+  box-shadow:0 4px 15px rgba(255,255,255,.1), 0 2px 8px rgba(26,35,126,.15);
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  opacity:.6;
+}
+.popup-page-nav-left{  left:5%; }
+.popup-page-nav-right{ right:5%; }
+.popup-page-nav-left:hover,
+.popup-page-nav-right:hover{
+  background:rgba(255,255,255,.35);
+  border-color:rgba(255,255,255,.5);
+  transform:translateY(-50%) scale(1.08);
+  opacity:1;
+}
+.popup-page-nav-left:disabled,
+.popup-page-nav-right:disabled{
+  opacity:.25; cursor:not-allowed; transform:translateY(-50%) scale(.92);
+  background:rgba(200,200,200,.1); border-color:rgba(255,255,255,.1); box-shadow:none;
+}
+.book-fullscreen-mode .popup-page-nav-left,
+.book-fullscreen-mode .popup-page-nav-right{
+  width:70px !important; height:70px !important;
+}
+.book-fullscreen-mode .popup-page-nav-left{  left:3% !important; }
+.book-fullscreen-mode .popup-page-nav-right{ right:3% !important; }
+
+.popup-progress-bar{ height:.5rem; background:#e5e7eb; border-radius:9999px; overflow:hidden; }
+.popup-progress-value{ height:100%; background:#22c55e; border-radius:9999px; }
+
+/* ========================================================================== */
+/* RESPONSIVE TWEAKS                                                          */
+/* ========================================================================== */
+
+@media (max-width:1440px){
+  :root{ --popup-book-min-height:650px; }
+}
+@media (max-width:1024px){
+  .popup-flip-book-container:not(.book-fullscreen-mode .popup-flip-book-container){
+    aspect-ratio:3 / 2;
+    width:min(1200px, 94vw) !important;
+    height:auto !important;
+    max-height:calc(100svh - var(--header-offset)) !important;
+  }
+  .popup-floating-dialog-container{ left:15%; width:70%; top:70%; }
+}
+@media (max-width:768px){
+  .popup-flip-book-container:not(.book-fullscreen-mode .popup-flip-book-container){
+    width:min(1000px, 94vw) !important;
+    max-height:calc(100svh - var(--header-offset)) !important;
+  }
+  .popup-floating-dialog-container{
+    top:75%; left:10%; width:80%;
+    padding:16px 20px 12px 20px; border-radius:8px;
+  }
+  .popup-floating-dialog-container .story-title{ font-size:16px; }
+  .popup-floating-dialog-container .narration-text,
+  .popup-floating-dialog-container .dialog-text{ font-size:13px; }
+  .popup-page-nav-left, .popup-page-nav-right{ width:40px; height:40px; left:2%; }
+  .popup-page-nav-right{ right:2%; left:auto; }
+}
+@media (max-width:480px){
+  .popup-flip-book-container:not(.book-fullscreen-mode .popup-flip-book-container){
+    width:min(860px, 96vw) !important;
+    max-height:calc(100svh - var(--header-offset)) !important;
+  }
+  .popup-floating-dialog-container{ top:75%; left:5%; width:90%; padding:14px 18px 10px 18px; }
+}
+
+/* Ultra-wide aspect ratios (keep book reasonable) */
+@media (min-aspect-ratio:21/9){
+  .popup-flip-book-container:not(.book-fullscreen-mode .popup-flip-book-container){
+    width:min(1200px, 84vw) !important;
+    max-height:calc(90svh - var(--header-offset)) !important;
+  }
+  .book-fullscreen-mode .popup-flip-book-container{
+    width:min(1500px, 88vw) !important;
+    max-height:calc(88svh - var(--fs-nudge)) !important; /* honor the nudge */
+  }
+}
+
+/* === Wider + Taller illustrations ====================================== */
+
+/* Root variables for tuning */
+:root {
+  --illus-min: 280px;
+  --illus-vh: 34vh;
+  --illus-max: 520px;
+  --illus-wide: 96%;   /* how wide the illustration is inside a page */
+}
+
+/* Default (windowed) */
+.popup-book-wrapper .page-illustration,
+.popup-book-wrapper .nc-imageFrame {
+  width: var(--illus-wide) !important;
+  margin: 0 auto !important;   /* center it */
+  height: clamp(var(--illus-min), var(--illus-vh), var(--illus-max)) !important;
+  border-radius: 18px !important;
+  overflow: hidden;
+}
+
+/* Image itself */
+.popup-book-wrapper .nc-illustration {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block;
+}
+
+/* Fullscreen: give it even more presence */
+.book-fullscreen-mode .page-illustration,
+.book-fullscreen-mode .nc-imageFrame {
+  width: 98% !important;          /* nearly edge-to-edge on each page */
+  height: clamp(320px, 42vh, 640px) !important;
+  border-radius: 20px !important;
+}

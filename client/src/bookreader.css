@@ -1,0 +1,140 @@
+/* FIXED: Flat book page flip animation (no angle) */
+
+.flip-book-container {
+  perspective: 1000px; /* Reduced for less 3D effect */
+  transform-style: preserve-3d;
+  overflow: hidden; /* Prevent visual glitches */
+}
+
+.flip-book-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: none; /* ADDED: Ensure no transforms */
+}
+
+/* Right side container that flips */
+.page-right-container {
+  transform-style: preserve-3d;
+  transition: transform 1s ease-in-out; /* FIXED: Matches JavaScript 1000ms */
+  transform-origin: left center; /* Flip from spine */
+  position: relative;
+  z-index: 1;
+  transform: rotateX(0deg) rotateY(0deg); /* ADDED: Force flat */
+}
+
+/* FIXED: Simple flat flip (no perspective) */
+.page-right-container.flipping {
+  transform: rotateY(-180deg); /* SIMPLE: Just rotate horizontally */
+}
+
+/* ENHANCED: Reverse flip */
+.page-right-container.flipping-reverse {
+  transform: rotateY(180deg); /* SIMPLE: Just rotate horizontally */
+}
+
+/* Current page content (front of the page) */
+.page-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  transform: rotateY(0deg) rotateX(0deg); /* ADDED: Force flat */
+  z-index: 2;
+  border-radius: 0 8px 8px 0; /* Page edges */
+}
+
+/* Next page content (back of the page) */
+.page-content-next {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  transform: rotateY(180deg) rotateX(0deg); /* ADDED: Force flat */
+  z-index: 1;
+  border-radius: 0 8px 8px 0;
+}
+
+/* Previous page content (for backward flip) */
+.page-content-prev {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  transform: rotateY(-180deg) rotateX(0deg); /* ADDED: Force flat */
+  z-index: 1;
+  border-radius: 0 8px 8px 0;
+}
+
+/* Enhanced shadow during flip */
+.page-right-container.flipping .page-content,
+.page-right-container.flipping-reverse .page-content {
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5); /* Enhanced shadow */
+}
+
+/* Page curl effect */
+.page-curl {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, transparent 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.2) 100%);
+  clip-path: polygon(100% 0, 0% 100%, 100% 100%);
+  pointer-events: none;
+}
+
+/* Book spine shadow */
+.page-spine-shadow {
+  position: absolute;
+  top: 0;
+  left: -2px;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to right, rgba(0,0,0,0.3), transparent);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* CRITICAL: Force hardware acceleration */
+.page-right-container,
+.page-content,
+.page-content-next,
+.page-content-prev {
+  will-change: transform;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  -webkit-transform-style: preserve-3d;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Prevent animation glitches */
+.page-right-container.flipping *,
+.page-right-container.flipping-reverse * {
+  user-select: none;
+  pointer-events: none;
+}
+
+/* ADDED: Ensure the flip completes fully */
+.page-right-container:not(.flipping):not(.flipping-reverse) {
+  transform: rotateY(0deg) translateZ(0);
+}
+
+/* Enhanced book appearance */
+.flip-book-container {
+  box-shadow: 
+    0 0 30px rgba(0,0,0,0.3),
+    inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+
+/* Ensure smooth transitions */
+* {
+  box-sizing: border-box;
+}

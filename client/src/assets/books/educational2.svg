@@ -1,0 +1,23 @@
+<svg width="150" height="150" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+  <!-- Book cover -->
+  <rect x="25" y="25" width="100" height="120" fill="#e6f7ff" stroke="#333" stroke-width="2" />
+  
+  <!-- Book spine -->
+  <rect x="20" y="25" width="10" height="120" fill="#80d0ff" stroke="#333" stroke-width="2" />
+  
+  <!-- Book title -->
+  <text x="75" y="55" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Educational</text>
+  <text x="75" y="70" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Book 2</text>
+  
+  <!-- Science elements -->
+  <!-- Atom symbol -->
+  <circle cx="75" cy="100" r="12" fill="none" stroke="#333" stroke-width="1.5" />
+  <ellipse cx="75" cy="100" rx="25" ry="8" fill="none" stroke="#f44336" stroke-width="1.5" />
+  <ellipse cx="75" cy="100" rx="25" ry="8" fill="none" stroke="#2196f3" stroke-width="1.5" transform="rotate(60 75 100)" />
+  <ellipse cx="75" cy="100" rx="25" ry="8" fill="none" stroke="#4caf50" stroke-width="1.5" transform="rotate(120 75 100)" />
+  
+  <!-- Electron dots -->
+  <circle cx="75" cy="75" r="3" fill="#2196f3" />
+  <circle cx="96" cy="112" r="3" fill="#f44336" />
+  <circle cx="54" cy="112" r="3" fill="#4caf50" />
+</svg>

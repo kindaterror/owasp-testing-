@@ -1,0 +1,365 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 99%;  /* Soft White #FDFDFD */
+    --foreground: 0 0% 20%;  /* Charcoal Gray #333333 */
+
+    --card: 0 0% 99%;  /* Soft White #FDFDFD */
+    --card-foreground: 0 0% 20%;  /* Charcoal Gray #333333 */
+
+    --popover: 0 0% 99%;  /* Soft White #FDFDFD */
+    --popover-foreground: 0 0% 20%;  /* Charcoal Gray #333333 */
+
+    --primary: 45 96% 48%;  /* Goldenrod Yellow #F4B400 for Ilaw ng Bayan */
+    --primary-foreground: 240 83% 18%;  /* Deep Navy Blue #1A237E */
+
+    --secondary: 39 100% 50%;  /* Warm Amber #FFA000 */
+    --secondary-foreground: 240 83% 18%;  /* Deep Navy Blue #1A237E */
+
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+
+    --accent: 240 83% 18%;  /* Deep Navy Blue #1A237E */
+    --accent-foreground: 0 0% 99%;  /* Soft White #FDFDFD */
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 45 96% 48%;  /* Goldenrod Yellow #F4B400 */
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 240 83% 18%;  /* Deep Navy Blue #1A237E */
+    --sidebar-foreground: 0 0% 99%;  /* Soft White #FDFDFD */
+    --sidebar-primary: 45 96% 48%;  /* Goldenrod Yellow #F4B400 */
+    --sidebar-primary-foreground: 240 83% 18%;  /* Deep Navy Blue #1A237E */
+    --sidebar-accent: 0 0% 96.1%;
+    --sidebar-accent-foreground: 240 83% 18%;  /* Deep Navy Blue #1A237E */
+    --sidebar-border: 240 70% 30%;
+    --sidebar-ring: 45 96% 48%;  /* Goldenrod Yellow #F4B400 */
+
+    --chart-1: 240 83% 18%;  /* Deep Navy Blue #1A237E */
+    --chart-2: 45 96% 48%;  /* Goldenrod Yellow #F4B400 */
+    --chart-3: 39 100% 50%;  /* Warm Amber #FFA000 */
+    --chart-4: 261 73% 58%;
+    --chart-5: 359 69% 60%;
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 45 96% 48%;  /* Goldenrod Yellow #F4B400 for Ilaw ng Bayan dark mode */
+    --primary-foreground: 240 83% 18%;  /* Deep Navy Blue #1A237E */
+
+    --secondary: 39 100% 50%;  /* Warm Amber #FFA000 */
+    --secondary-foreground: 240 83% 18%;  /* Deep Navy Blue #1A237E */
+
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 45 96% 48%;  /* Goldenrod Yellow #F4B400 */
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .logo-placeholder {
+    @apply h-12 flex items-center justify-center;
+  }
+
+  .book-card {
+    @apply transition-all duration-300 ease-in-out hover:transform hover:-translate-y-1 hover:shadow-lg;
+  }
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .logo-placeholder {
+    @apply h-12 flex items-center justify-center;
+  }
+
+  .book-card {
+    @apply transition-all duration-300 ease-in-out hover:transform hover:-translate-y-1 hover:shadow-lg;
+  }
+
+  /* Book page container */
+  .book-container {
+    position: relative;
+    perspective: 1200px;
+    width: 100%;
+  }
+
+  /* Book wrapper with 3D effect */
+  .book-wrapper {
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transform-style: preserve-3d;
+    transition: transform 0.7s;
+    position: relative;
+  }
+
+  /* Each page in the book */
+  .book-page {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+    transition: transform 0.7s;
+    background-color: white;
+    border-radius: 0.5rem;
+  }
+
+  /* Spine/fold line in the center of the book */
+  .book-fold {
+    position: absolute;
+    height: 100%;
+    width: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-image: linear-gradient(to right, #d1d5db, #f3f4f6);
+    z-index: 10;
+  }
+
+  /* Left page */
+  .book-page-left {
+    transform-origin: right center;
+  }
+
+  /* Right page */
+  .book-page-right {
+    transform-origin: left center;
+  }
+
+  /* Book Reader Styles */
+  .progress-bar {
+    @apply h-2 bg-gray-200 rounded-full overflow-hidden;
+  }
+
+  .progress-value {
+    @apply h-full bg-secondary rounded-full;
+  }
+
+  /* Fullscreen mode styles */
+  .book-reader-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 50;
+    background-color: #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Realistic 3D book page flip animation */
+  .flip-book-container {
+    perspective: 3000px;
+    position: relative;
+  }
+  
+  .flip-book-content {
+    transform-style: preserve-3d;
+    position: relative;
+    height: 100%;
+    width: 100%;
+  }
+  
+  .page-wrapper {
+    position: relative;
+    transform-style: preserve-3d;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.8s cubic-bezier(0.24, 0.78, 0.25, 0.95);
+  }
+  
+  /* Use a different animation curve for more realistic page flipping */
+  .page-wrapper.flipping {
+    transform: rotateY(-180deg);
+    transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275); /* More natural bounce */
+  }
+  
+  .page-side {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);
+    will-change: transform;
+    overflow: hidden; /* Ensure content doesn't spill */
+  }
+  
+  /* Front page with realistic page characteristics */
+  .page-front {
+    z-index: 1;
+    background-color: #fff;
+    background-image: 
+      linear-gradient(to right, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0) 5%),
+      linear-gradient(to bottom, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0) 5%);
+  }
+  
+  /* Back page with slightly different texture */
+  .page-back {
+    transform: rotateY(180deg);
+    background-color: #fff;
+    background-image: 
+      linear-gradient(to left, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0) 5%),
+      linear-gradient(to bottom, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0) 5%);
+  }
+  
+  /* Book's center binding effect */
+  .page-fold {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(to right, 
+      rgba(0, 0, 0, 0.1) 0%, 
+      rgba(0, 0, 0, 0.05) 50%,
+      rgba(0, 0, 0, 0.1) 100%);
+    z-index: 10;
+    box-shadow: -2px 0 3px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Realistic page shadow that animates during turn */
+  .page-shadow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  
+  /* Different shadow styles for different flip directions */
+  .page-wrapper.flipping .page-shadow {
+    opacity: 0.6;
+    background: 
+      linear-gradient(to right, 
+        rgba(0, 0, 0, 0.1) 0%, 
+        rgba(0, 0, 0, 0) 25%),
+      radial-gradient(
+        ellipse at center, 
+        rgba(0, 0, 0, 0.25) 0%, 
+        rgba(0, 0, 0, 0) 80%
+      );
+    animation: pageShadow 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  
+  /* Animated realistic page shadow */
+  @keyframes pageShadow {
+    0% { 
+      opacity: 0; 
+      transform: scaleX(0.95) scaleY(0.95);
+    }
+    50% { 
+      opacity: 0.8; 
+      transform: scaleX(1.05) scaleY(1);
+    }
+    100% { 
+      opacity: 0.6; 
+      transform: scaleX(1) scaleY(1);
+    }
+  }
+  
+  /* Edge curl effect with 3D appearance */
+  .page-curl {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 60px;
+    z-index: 4;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  
+  /* Different curl effects for each side */
+  .page-front .page-curl {
+    right: 0;
+    background: 
+      linear-gradient(to left,
+        rgba(255, 255, 255, 0.6) 0%,
+        rgba(255, 255, 255, 0) 100%);
+    box-shadow: 
+      inset -2px 0 5px rgba(0, 0, 0, 0.1),
+      inset -1px 0 2px rgba(0, 0, 0, 0.2);
+    border-left: 1px solid rgba(0, 0, 0, 0.05);
+    transform-origin: right center;
+  }
+  
+  .page-wrapper:hover .page-curl {
+    opacity: 0.8;
+    transform: skewY(2deg);
+  }
+  
+  /* Page bending animation during flip */
+  .page-wrapper.flipping .page-front {
+    animation: pageBend 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  
+  @keyframes pageBend {
+    0%, 100% { 
+      transform: rotateY(0) rotateX(0); 
+    }
+    25% { 
+      transform: rotateY(-20deg) rotateX(5deg); 
+    }
+    75% { 
+      transform: rotateY(-160deg) rotateX(-3deg); 
+    }
+  }
+}

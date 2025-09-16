@@ -1,0 +1,17 @@
+<svg width="150" height="150" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+  <!-- Book cover -->
+  <rect x="25" y="25" width="100" height="120" fill="#f0f0f0" stroke="#333" stroke-width="2" />
+  
+  <!-- Book spine -->
+  <rect x="20" y="25" width="10" height="120" fill="#d0d0d0" stroke="#333" stroke-width="2" />
+  
+  <!-- Book pages (edge) -->
+  <rect x="125" y="30" width="5" height="110" fill="#fff" stroke="#ccc" stroke-width="1" />
+  
+  <!-- Book title -->
+  <text x="75" y="85" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">Story Book 1</text>
+  
+  <!-- Book icon -->
+  <circle cx="75" cy="60" r="15" fill="#4a90e2" />
+  <path d="M75 50 L70 65 L80 65 Z" fill="#fff" />
+</svg>

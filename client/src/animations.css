@@ -1,0 +1,340 @@
+/* Base book styles */
+.book-wrapper {
+  perspective: 3000px;
+  background-color: #FDFDFD;  /* Soft White for Ilaw ng Bayan */
+  border-radius: 8px;
+  border: 8px solid #1A237E;  /* Deep Navy Blue border */
+  overflow: hidden;
+}
+
+.book {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  display: flex;
+}
+
+/* Left and right page containers */
+.left-container, .right-container {
+  position: relative;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Page styling */
+.page {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  right: 0;
+  transform-style: preserve-3d;
+  transition: transform 0s;
+}
+
+/* The moving part of the page during animation */
+.page-turn {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  right: 0;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* Turning animation */
+.turn-animation {
+  animation: turnPage 1.2s ease-in-out forwards;
+}
+
+@keyframes turnPage {
+  0% {
+    transform: rotateY(0deg);
+    box-shadow: 0 0 0 rgba(26, 35, 126, 0);  /* Navy Blue shadow */
+  }
+  20% {
+    box-shadow: -7px 5px 10px rgba(26, 35, 126, 0.15);  /* Navy Blue shadow */
+  }
+  60% {
+    box-shadow: -15px 10px 20px rgba(26, 35, 126, 0.15);  /* Navy Blue shadow */
+  }
+  100% {
+    transform: rotateY(-180deg);
+    box-shadow: 0 0 0 rgba(26, 35, 126, 0);  /* Navy Blue shadow */
+  }
+}
+
+/* Page sides */
+.page-front, .page-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  backface-visibility: hidden;
+  overflow: hidden;
+  background: #FDFDFD;  /* Soft White for Ilaw ng Bayan */
+}
+
+.page-back {
+  transform: rotateY(180deg);
+}
+
+/* Page content */
+.page-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  background-color: #FDFDFD;  /* Soft White for Ilaw ng Bayan */
+  display: flex;
+  flex-direction: column;
+  color: #333333;  /* Charcoal Gray text */
+}
+
+/* Left page style */
+.left-page {
+  border-right: 1px solid rgba(244, 180, 0, 0.4);  /* Goldenrod border */
+  box-shadow: inset -7px 0 20px -7px rgba(26, 35, 126, 0.2);  /* Navy Blue shadow */
+}
+
+/* Right page style */
+.right-page {
+  border-left: 1px solid rgba(244, 180, 0, 0.4);  /* Goldenrod border */
+  box-shadow: inset 7px 0 20px -7px rgba(26, 35, 126, 0.2);  /* Navy Blue shadow */
+}
+
+/* Image container */
+.page-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.page-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 4px solid rgba(244, 180, 0, 0.3);  /* Goldenrod border */
+  box-sizing: border-box;
+}
+
+/* Book cover styles */
+.book-cover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, #1A237E, #3949AB);  /* Navy Blue gradient */
+  border: 8px solid #0D1421;  /* Darker Navy border */
+  box-sizing: border-box;
+  z-index: 500;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 25px -5px rgba(26, 35, 126, 0.4);  /* Navy Blue shadow */
+}
+
+.book-cover-title {
+  font-size: 2.5rem;
+  color: #F4B400;  /* Goldenrod Yellow text */
+  text-align: center;
+  font-family: serif;
+  padding: 2rem;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.6);
+  letter-spacing: 1px;
+}
+
+/* Opening animation */
+@keyframes bookOpen {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+.cover-open {
+  animation: bookOpen 0.8s ease-in-out forwards;
+}
+
+/* Helper classes */
+.transform-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+/* Page curl effect */
+.page-turn:after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to right, 
+    rgba(244, 180, 0, 0.2) 0%,  /* Goldenrod highlight */
+    rgba(244, 180, 0, 0) 100%);
+  z-index: 500;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.turn-animation:after {
+  opacity: 1;
+}
+
+/* Fullscreen mode styles */
+.fullscreen-mode {
+  overflow: hidden !important;
+  position: relative;
+}
+
+.fullscreen-mode body {
+  overflow: hidden !important;
+}
+
+.fullscreen-mode .book-wrapper {
+  border: none !important;
+  border-radius: 0 !important;
+  z-index: 9999 !important;
+}
+
+/* Make the book fill the entire screen in fullscreen mode */
+.book-wrapper.fixed {
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  border: none !important;
+  background-color: #1A237E !important;  /* Deep Navy Blue background */
+}
+
+/* Style for the fullscreen ESC message */
+.fullscreen-esc-message {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 8px 0;
+  background-color: rgba(26, 35, 126, 0.8);  /* Navy Blue background */
+  color: #F4B400;  /* Goldenrod text */
+  font-size: 14px;
+  text-align: center;
+  z-index: 10000;
+}
+
+.fullscreen-esc-message kbd {
+  background-color: #F4B400;  /* Goldenrod background */
+  color: #1A237E;  /* Navy Blue text */
+  border-radius: 3px;
+  padding: 2px 5px;
+  margin: 0 3px;
+  box-shadow: 1px 1px 1px rgba(26, 35, 126, 0.3);  /* Navy shadow */
+  display: inline-block;
+  cursor: pointer;
+}
+
+/* Ensure the fullscreen book container is on top of everything */
+.book-wrapper.fixed {
+  position: fixed !important;
+  z-index: 9999 !important;
+}
+
+/* Fix for transform-style issues in fullscreen */
+.transform-style-preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Active page animation */
+.page.active {
+  animation: flipPage 1s ease-in-out forwards;
+}
+
+@keyframes flipPage {
+  0% {
+    transform: rotateY(0);
+  }
+  100% {
+    transform: rotateY(-180deg);
+  }
+}
+
+/* Animate the book cover opening */
+.animate-book-open {
+  animation: bookCoverOpen 1.5s ease-in-out forwards;
+}
+
+@keyframes bookCoverOpen {
+  0% {
+    transform: rotateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: rotateY(-180deg);
+    opacity: 0;
+    z-index: -1;
+  }
+}
+
+/* Fullscreen dialog styles */
+.fullscreen-mode [data-radix-portal] {
+  position: relative;
+  z-index: 10000 !important;
+}
+
+.fullscreen-mode [role="dialog"] {
+  position: fixed !important;
+  z-index: 10000 !important;
+}
+
+.fullscreen-mode [data-radix-popper-content-wrapper] {
+  position: fixed !important;
+  z-index: 10000 !important;
+}
+
+/* These target the specific Radix UI dialog components */
+[data-radix-dialog-overlay] {
+  z-index: 10000 !important;
+}
+
+[data-radix-dialog-content] {
+  z-index: 10001 !important;
+  position: fixed !important;
+}
+
+/* Force the dialog to appear on top in fullscreen mode */
+.fullscreen-dialog {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.fullscreen-dialog [role="dialog"] {
+  position: relative !important;
+  z-index: 10001 !important;
+}
