@@ -13,7 +13,7 @@ import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import uploadHandler from "@/pages/api/upload";
-
+import cors from "cors";
 // -----------------------------------------------------------------------------
 // JWT Secret
 // -----------------------------------------------------------------------------
@@ -30,6 +30,16 @@ if (JWT_SECRET.length < 32) {
 }
 
 
+// put this before app.use(express.json(...)) and before any routes
+const FRONTEND_ORIGIN = process.env.FRONTEND_URL || "https://your-frontend.onrender.com";
+
+const corsOptions: cors.CorsOptions = {
+  origin: FRONTEND_ORIGIN,           // exact origin, not *
+  credentials: true,                 // allow cookies/Authorization with credentials: 'include'
+  methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
+  allowedHeaders: ["Content-Type","Authorization"],
+  optionsSuccessStatus: 204
+};
 
 // -----------------------------------------------------------------------------
 // Cloudinary
@@ -1104,6 +1114,10 @@ app.get("/api/auth/user", authenticate, async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 });
+
+app.use(cors(corsOptions));
+// ensure preflight for all routes succeeds
+app.options("*", cors(corsOptions));
 
   // =========================
   // Books
