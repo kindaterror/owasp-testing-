@@ -161,6 +161,15 @@ const corsOptions: cors.CorsOptions = {
 // -----------------------------------------------------------------------------
 export function setupRoutes(app: Express): Server {
   // NOTE: do NOT serve local /uploads here since we’re using Cloudinary now.
+
+// CORS options: allow credentials and common methods/headers
+const corsOptions: cors.CorsOptions = {
+  origin: FRONTEND_ORIGIN,                 // exact origin, not * [web:175]
+  credentials: true,                       // needed because client sends credentials: 'include' [web:176]
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], // [web:176]
+  allowedHeaders: ["Content-Type", "Authorization"],             // [web:176]
+  optionsSuccessStatus: 204,               // OK for legacy browsers [web:176]
+};
   app.use(cors(corsOptions));                   // applies to all routes and preflight
   app.options("*", cors(corsOptions));          // optional, harmless if kept
 
