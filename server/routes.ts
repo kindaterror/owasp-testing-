@@ -145,7 +145,7 @@ const normalizeSubjects = (arr: unknown): string[] => {
 const isStorybookSubject = (s?: string) => !!s && /^storybook(s)?$/i.test(s.trim());
 // Frontend origin (must be exact when using credentials)
 const FRONTEND_ORIGIN =
-  process.env.FRONTEND_URL || "https://your-frontend.onrender.com"; // [web:175][web:179]
+  process.env.FRONTEND_URL || "https://schoolsomething.onrender.com"; // [web:175][web:179]
 
 // CORS options: allow credentials and common methods/headers
 const corsOptions: cors.CorsOptions = {
