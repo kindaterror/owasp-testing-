@@ -7,7 +7,7 @@ async function safeParseJSON(res: Response): Promise<any> {
   try {
     return text ? JSON.parse(text) : {};
   } catch {
-    return { raw: text }; // fallback if HTML or invalid JSON
+    return { raw: text };
   }
 }
 
@@ -20,15 +20,14 @@ function toHttpError(res: Response, body: any): Error {
 }
 
 // == API BASE URL ==
-// In Vite, only VITE_* vars are exposed to client code via import.meta.env. [web:294]
-const API_BASE_URL =
-  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_BASE_URL) ||
-  "https://your-backend.onrender.com"; // fallback for dev or missing env
+// Build-time injected; never fallback silently in production.
+const rawBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const API_BASE_URL = rawBase.replace(/\/+$/, ""); // trim trailing slash
 
-// Optional guard to fail fast if missing in production builds (requires rebuild to take effect). [web:296]
-if (typeof window !== "undefined" && import.meta.env?.PROD && !import.meta.env?.VITE_API_BASE_URL) {
-  // eslint-disable-next-line no-console
-  console.warn("Missing VITE_API_BASE_URL; using fallback https://your-backend.onrender.com");
+if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
+  if (!rawBase) {
+    throw new Error("Missing NEXT_PUBLIC_API_BASE_URL in production build");
+  }
 }
 
 // == API REQUEST FUNCTION ==
@@ -42,20 +41,17 @@ export async function apiRequest<T = any>(
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}), // server must allow Authorization in CORS [web:194]
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options?.headers || {}),
   };
 
-  // Allow absolute URLs; otherwise prefix with API base URL.
-  if (!url.startsWith("http")) {
-    if (!API_BASE_URL) throw new Error("API base URL is not configured");
-  }
-  const fullUrl = url.startsWith("http") ? url : API_BASE_URL + url;
+  const fullUrl = url.startsWith("http")
+    ? url
+    : `${API_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
 
   const res = await fetch(fullUrl, {
     method,
-    // Avoid credentialed CORS for bearer-token flows. [web:174][web:193]
-    credentials: "omit",
+    credentials: "omit", // bearer token only
     headers,
     body: data ? JSON.stringify(data) : undefined,
     ...options,
@@ -63,7 +59,6 @@ export async function apiRequest<T = any>(
 
   const parsed = await safeParseJSON(res);
   if (!res.ok) throw toHttpError(res, parsed);
-
   return parsed as T;
 }
 
@@ -74,27 +69,19 @@ export const getQueryFn =
   <T>({ on401 }: { on401: UnauthorizedBehavior }): QueryFunction<T> =>
   async ({ queryKey }) => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const headers: HeadersInit = { ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 
-    const headers: HeadersInit = {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
+    const key = queryKey as unknown as string;
+    const finalUrl = key.startsWith("http")
+      ? key
+      : `${API_BASE_URL}${key.startsWith("/") ? "" : "/"}${key}`;
 
-    const url = queryKey[0] as string;
-    const isAbsolute = url.startsWith("http");
-    const finalUrl = isAbsolute ? url : `${API_BASE_URL}${url}`;
-
-    const res = await fetch(finalUrl, {
-      credentials: "omit", // non-credentialed CORS for reads too [web:174][web:193]
-      headers,
-    });
-
+    const res = await fetch(finalUrl, { credentials: "omit", headers });
     if (on401 === "returnNull" && res.status === 401) {
       return null as unknown as T;
     }
-
     const parsed = await safeParseJSON(res);
     if (!res.ok) throw toHttpError(res, parsed);
-
     return parsed as T;
   };
 
