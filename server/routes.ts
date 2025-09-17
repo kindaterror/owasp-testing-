@@ -31,8 +31,7 @@ if (JWT_SECRET.length < 32) {
 }
 
 // Frontend origin (must be exact when using credentials)
-const FRONTEND_ORIGIN =
-  process.env.FRONTEND_URL || "https://schoolsomething.onrender.com"; // [web:175][web:179]
+const FRONTEND_ORIGIN = 'https://schoolsomething.onrender.com'  // [web:175][web:179]
 
 // CORS options: allow credentials and common methods/headers
 const corsOptions: cors.CorsOptions = {
