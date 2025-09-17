@@ -30,16 +30,13 @@ if (JWT_SECRET.length < 32) {
   console.warn("⚠️  JWT_SECRET is too short. Consider using a longer, more secure key.");
 }
 
-// Frontend origin (must be exact when using credentials)
-const FRONTEND_ORIGIN = 'https://schoolsomething.onrender.com'  // [web:175][web:179]
-
-// CORS options: allow credentials and common methods/headers
+const FRONTEND_ORIGIN = String(process.env.FRONTEND_URL || "https://schoolsomething.onrender.com").replace(/\/+$/, "");
 const corsOptions: cors.CorsOptions = {
-  origin: FRONTEND_ORIGIN,                 // exact origin, not * [web:175]
-  credentials: true,                       // needed because client sends credentials: 'include' [web:176]
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], // [web:176]
-  allowedHeaders: ["Content-Type", "Authorization"],             // [web:176]
-  optionsSuccessStatus: 204,               // OK for legacy browsers [web:176]
+  origin: FRONTEND_ORIGIN,           // exact origin, never "*"
+  credentials: true,                 // OK even if client omits cookies; safe to keep
+  methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
+  allowedHeaders: ["Content-Type","Authorization"],
+  optionsSuccessStatus: 204,
 };
 
 // -----------------------------------------------------------------------------
@@ -980,117 +977,163 @@ message: 'Failed to delete account'
     }
   });
 
-  app.post("/api/auth/login", async (req, res) => {
-    try {
-      let systemSettings = await db.query.systemSettings.findFirst();
-      if (!systemSettings) {
-        const [newSettings] = await db
-          .insert(schema.systemSettings)
-          .values({
-            allowNewRegistrations: true,
-            requireEmailVerification: false,
-            autoApproveTeachers: false,
-            autoApproveStudents: false,
-            maxLoginAttempts: 5,
-            sessionTimeoutMinutes: 60,
-            requireStrongPasswords: true,
-          })
-          .returning();
-        systemSettings = newSettings;
-      }
+// Immediately after this definition, a mount log is emitted so deploy logs confirm it exists.
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    // Ensure system settings exist
+    let systemSettings = await db.query.systemSettings.findFirst();
+    if (!systemSettings) {
+      const [newSettings] = await db
+        .insert(schema.systemSettings)
+        .values({
+          allowNewRegistrations: true,
+          requireEmailVerification: false,
+          autoApproveTeachers: false,
+          autoApproveStudents: false,
+          maxLoginAttempts: 5,
+          sessionTimeoutMinutes: 60,
+          requireStrongPasswords: true,
+        })
+        .returning();
+      systemSettings = newSettings;
+    }
 
-      const loginData = schema.loginSchema.parse(req.body);
-      const user = await db.query.users.findFirst({ where: eq(schema.users.email, loginData.email) });
-      if (!user) return res.status(400).json({ success: false, message: "Invalid email or password" });
+    // Validate payload
+    const loginData = schema.loginSchema.parse(req.body);
 
-      const MAX_LOGIN_ATTEMPTS = systemSettings.maxLoginAttempts ?? 5;
-      const COOLDOWN_MINUTES = 15;
-      if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
-        const lastAttemptTime = new Date(user.lastFailedLoginAt).getTime();
-        const cooldown = COOLDOWN_MINUTES * 60 * 1000;
-        if (Date.now() - lastAttemptTime < cooldown) {
-          return res.status(403).json({
-            success: false,
-            message: `Too many failed login attempts. Please try again after ${COOLDOWN_MINUTES} minutes.`,
-          });
-        } else {
-          await db.update(schema.users).set({ loginAttempts: 0 }).where(eq(schema.users.id, user.id));
-        }
-      }
+    // Look up user by email
+    const user = await db.query.users.findFirst({
+      where: eq(schema.users.email, loginData.email),
+    });
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid email or password" });
+    }
 
-      const isPasswordValid = await bcrypt.compare(loginData.password, user.password);
-      if (!isPasswordValid) {
-        await db
-          .update(schema.users)
-          .set({ loginAttempts: (user.loginAttempts || 0) + 1, lastFailedLoginAt: new Date() })
-          .where(eq(schema.users.id, user.id));
-        return res.status(400).json({ success: false, message: "Invalid email or password" });
-      }
-
-      if (systemSettings.requireEmailVerification && !user.emailVerified) {
+    // Throttle by attempts
+    const MAX_LOGIN_ATTEMPTS = systemSettings.maxLoginAttempts ?? 5;
+    const COOLDOWN_MINUTES = 15;
+    if ((user.loginAttempts ?? 0) >= MAX_LOGIN_ATTEMPTS) {
+      const lastAttemptTime = user.lastFailedLoginAt
+        ? new Date(user.lastFailedLoginAt).getTime()
+        : 0;
+      const cooldown = COOLDOWN_MINUTES * 60 * 1000;
+      if (Date.now() - lastAttemptTime < cooldown) {
         return res.status(403).json({
           success: false,
-          message: "Email verification is required. Please verify your email before logging in.",
-          emailVerificationRequired: true,
+          message: `Too many failed login attempts. Please try again after ${COOLDOWN_MINUTES} minutes.`,
         });
+      } else {
+        await db
+          .update(schema.users)
+          .set({ loginAttempts: 0 })
+          .where(eq(schema.users.id, user.id));
       }
+    }
 
-      if (user.approvalStatus !== "approved") {
-        if (user.approvalStatus === "pending") {
-          const roleMessage =
-            user.role === "student"
-              ? "Your account is pending approval from an administrator. Please check back later."
-              : user.role === "teacher"
-              ? "Your teacher account is pending approval from an administrator. Please check back later."
-              : "Your account is pending approval from an administrator. Please check back later.";
-          return res.status(403).json({ success: false, message: roleMessage });
-        } else if (user.approvalStatus === "rejected") {
-          const roleMessage =
-            user.role === "student"
-              ? "Your account application has been rejected."
-              : user.role === "teacher"
-              ? "Your teacher account application has been rejected."
-              : "Your account application has been rejected.";
-          return res
-            .status(403)
-            .json({ success: false, message: roleMessage, reason: user.rejectionReason || "No reason provided." });
-        }
-      }
-
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(
+      loginData.password,
+      user.password
+    );
+    if (!isPasswordValid) {
       await db
         .update(schema.users)
-        .set({ loginAttempts: 0, lastFailedLoginAt: new Date(0) })
+        .set({
+          loginAttempts: (user.loginAttempts || 0) + 1,
+          lastFailedLoginAt: new Date(),
+        })
         .where(eq(schema.users.id, user.id));
-
-      const sessionTimeout = user.role === "admin" ? "7d" : `${systemSettings.sessionTimeoutMinutes ?? 60}m`;
-      const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, {
-        expiresIn: sessionTimeout,
-      } as jwt.SignOptions);
-
-      return res.status(200).json({
-        success: true,
-        message: "Login successful",
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
-          gradeLevel: user.gradeLevel,
-          approvalStatus: user.approvalStatus,
-          emailVerified: user.emailVerified,
-        },
-        token,
-      });
-    } catch (error) {
-      if (error instanceof ZodError) {
-        return res.status(400).json({ success: false, message: "Validation error", errors: error.errors });
-      }
-      console.error("Error logging in:", error);
-      return res.status(500).json({ success: false, message: "Internal server error" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid email or password" });
     }
-  });
+
+    // Email verification requirement
+    if (systemSettings.requireEmailVerification && !user.emailVerified) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Email verification is required. Please verify your email before logging in.",
+        emailVerificationRequired: true,
+      });
+    }
+
+    // Approval requirement
+    if (user.approvalStatus !== "approved") {
+      if (user.approvalStatus === "pending") {
+        const roleMessage =
+          user.role === "student"
+            ? "Your account is pending approval from an administrator. Please check back later."
+            : user.role === "teacher"
+            ? "Your teacher account is pending approval from an administrator. Please check back later."
+            : "Your account is pending approval from an administrator. Please check back later.";
+        return res.status(403).json({ success: false, message: roleMessage });
+      } else if (user.approvalStatus === "rejected") {
+        const roleMessage =
+          user.role === "student"
+            ? "Your account application has been rejected."
+            : user.role === "teacher"
+            ? "Your teacher account application has been rejected."
+            : "Your account application has been rejected.";
+        return res.status(403).json({
+          success: false,
+          message: roleMessage,
+          reason: user.rejectionReason || "No reason provided.",
+        });
+      }
+    }
+
+    // Reset attempts on success
+    await db
+      .update(schema.users)
+      .set({ loginAttempts: 0, lastFailedLoginAt: new Date(0) })
+      .where(eq(schema.users.id, user.id));
+
+    // Token lifetime by role
+    const sessionTimeout =
+      user.role === "admin"
+        ? "7d"
+        : `${systemSettings.sessionTimeoutMinutes ?? 60}m`;
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: sessionTimeout } as jwt.SignOptions
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        gradeLevel: user.gradeLevel,
+        approvalStatus: user.approvalStatus,
+        emailVerified: user.emailVerified,
+      },
+      token,
+    });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Validation error", errors: error.errors });
+    }
+    console.error("Error logging in:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
+  }
+});
+
+// Emit a one-time mount log so production logs prove this handler is active
+console.log("Mounted POST /api/auth/login");
 
 app.get("/api/auth/user", authenticate, async (req, res) => {
   try {
