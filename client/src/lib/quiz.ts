@@ -31,15 +31,19 @@ export type QuizStats = {
 
 export type QuizStatsByBook = Record<number, QuizStats>;
 
+// Build absolute API URLs using the same env as the query client
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/+$/, "");
+function apiUrl(path: string) {
+  return `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
 /**
  * Submit a quiz attempt to the API.
  * Calculates percentage on the client to avoid trusting the caller.
  */
 export async function submitQuizAttempt(opts: SubmitQuizAttemptOptions) {
   const token = localStorage.getItem("token");
-  if (!token) {
-    throw new Error("Not authenticated: missing token");
-  }
+  if (!token) throw new Error("Not authenticated: missing token");
 
   // basic guards
   const bookId = Number(opts.bookId);
@@ -49,16 +53,15 @@ export async function submitQuizAttempt(opts: SubmitQuizAttemptOptions) {
   const durationSec = Math.max(0, Number(opts.durationSec ?? 0));
   const mode: QuizMode = opts.mode === "straight" ? "straight" : "retry";
 
-  const percentage =
-    scoreTotal > 0 ? Math.round((scoreCorrect / scoreTotal) * 100) : 0;
+  const percentage = scoreTotal > 0 ? Math.round((scoreCorrect / scoreTotal) * 100) : 0;
 
-  const res = await fetch("/api/quiz-attempts", {
+  const res = await fetch(apiUrl("/api/quiz-attempts"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    credentials: "include",
+    credentials: "omit",
     body: JSON.stringify({
       bookId,
       pageId,
@@ -84,7 +87,7 @@ export async function submitQuizAttempt(opts: SubmitQuizAttemptOptions) {
  * NOTE: the server may ignore unknown params like `limit`.
  */
 export async function fetchQuizAttempts(params?: {
-  userId?: number;     // admin/teacher filter
+  userId?: number;  // admin/teacher filter
   bookId?: number;
   pageId?: number;
   limit?: number;
@@ -98,11 +101,11 @@ export async function fetchQuizAttempts(params?: {
   if (params?.pageId != null) qs.set("pageId", String(params.pageId));
   if (params?.limit != null) qs.set("limit", String(params.limit));
 
-  const url = `/api/quiz-attempts${qs.toString() ? `?${qs.toString()}` : ""}`;
+  const url = apiUrl(`/api/quiz-attempts${qs.toString() ? `?${qs.toString()}` : ""}`);
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
-    credentials: "include",
+    credentials: "omit",
   });
 
   if (!res.ok) {
@@ -149,8 +152,7 @@ export function summarizeAttemptsByBook(attempts: QuizAttempt[]): QuizStatsByBoo
     const isNewer =
       newTime > curTime ||
       // fallback: if times are equal/unknown, prefer higher attemptNumber
-      ((a.attemptNumber ?? 0) > 0 &&
-        (a.attemptNumber ?? 0) >= (s.attempts /* rough fallback */));
+      ((a.attemptNumber ?? 0) > 0 && (a.attemptNumber ?? 0) >= s.attempts /* rough fallback */);
 
     if (isNewer) {
       s.lastAt = a.createdAt ?? s.lastAt;
