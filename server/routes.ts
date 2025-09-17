@@ -143,6 +143,13 @@ const normalizeSubjects = (arr: unknown): string[] => {
 
 // ✅ add near your other helpers
 const isStorybookSubject = (s?: string) => !!s && /^storybook(s)?$/i.test(s.trim());
+ 
+// -----------------------------------------------------------------------------
+// Routes
+// -----------------------------------------------------------------------------
+export function setupRoutes(app: Express): Server {
+  // NOTE: do NOT serve local /uploads here since we’re using Cloudinary now.
+
 // Frontend origin (must be exact when using credentials)
 const FRONTEND_ORIGIN =
   process.env.FRONTEND_URL || "https://schoolsomething.onrender.com"; // [web:175][web:179]
@@ -155,12 +162,6 @@ const corsOptions: cors.CorsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],             // [web:176]
   optionsSuccessStatus: 204,               // OK for legacy browsers [web:176]
 };
-
-// -----------------------------------------------------------------------------
-// Routes
-// -----------------------------------------------------------------------------
-export function setupRoutes(app: Express): Server {
-  // NOTE: do NOT serve local /uploads here since we’re using Cloudinary now.
   app.use(cors(corsOptions));                   // applies to all routes and preflight
   app.options("*", cors(corsOptions));          // optional, harmless if kept
 
