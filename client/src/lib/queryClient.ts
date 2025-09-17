@@ -1,28 +1,28 @@
 // == IMPORTS & DEPENDENCIES ==
-import { QueryClient, QueryFunction } from "@tanstack/react-query"; // [web:83]
+import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 // == HELPERS ==
 async function safeParseJSON(res: Response): Promise<any> {
-  const text = await res.text(); // [web:83]
+  const text = await res.text();
   try {
-    return text ? JSON.parse(text) : {}; // [web:83]
+    return text ? JSON.parse(text) : {};
   } catch {
-    return { raw: text }; // fallback if HTML or invalid JSON [web:83]
+    return { raw: text }; // fallback if HTML or invalid JSON
   }
 }
 
 function toHttpError(res: Response, body: any): Error {
-  const msg = body?.message || res.statusText || "Unknown error"; // [web:83]
-  const error = new Error(`${res.status} ${msg}`); // [web:83]
-  (error as any).status = res.status; // [web:83]
-  (error as any).body = body; // [web:83]
-  return error; // [web:83]
+  const msg = body?.message || res.statusText || "Unknown error";
+  const error = new Error(`${res.status} ${msg}`);
+  (error as any).status = res.status;
+  (error as any).body = body;
+  return error;
 }
 
 // == API BASE URL ==
-// Use env for production and localhost for dev; NEXT_PUBLIC_* is exposed to the browser in Next.js.
+// Use env for production and localhost for dev; NEXT_PUBLIC_* is exposed to the browser.
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-backend.onrender.com"; // [web:83][web:144]
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:3000";
 
 // Optional guard to fail fast if missing in production builds.
 if (
@@ -31,7 +31,7 @@ if (
   !process.env.NEXT_PUBLIC_API_BASE_URL
 ) {
   // eslint-disable-next-line no-console
-  console.warn("Missing NEXT_PUBLIC_API_BASE_URL; falling back to localhost"); // [web:83]
+  console.warn("Missing NEXT_PUBLIC_API_BASE_URL; falling back to localhost");
 }
 
 // == API REQUEST FUNCTION ==
@@ -41,75 +41,81 @@ export async function apiRequest<T = any>(
   data?: any,
   options?: RequestInit
 ): Promise<T> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null; // [web:83]
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   const headers: HeadersInit = {
-    "Content-Type": "application/json", // [web:83]
-    ...(token ? { Authorization: `Bearer ${token}` } : {}), // [web:121]
-    ...(options?.headers || {}), // [web:83]
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options?.headers || {}),
   };
 
   // Allow absolute URLs; otherwise prefix with API base URL.
   if (!url.startsWith("http")) {
-    if (!API_BASE_URL) throw new Error("API base URL is not configured"); // [web:83]
+    if (!API_BASE_URL) throw new Error("API base URL is not configured");
   }
-  const fullUrl = url.startsWith("http") ? url : API_BASE_URL + url; // [web:83]
+  const fullUrl = url.startsWith("http") ? url : API_BASE_URL + url;
 
   const res = await fetch(fullUrl, {
-    method, // [web:83]
-    credentials: "include", // be sure backend CORS allows credentials & origin [web:121][web:120]
-    headers, // [web:83]
-    body: data ? JSON.stringify(data) : undefined, // [web:83]
-    ...options, // [web:83]
+    method,
+    // Important: do NOT send cookies for bearer-token auth to avoid credentialed CORS
+    // which requires Allow-Credentials and stricter preflights.
+    credentials: "omit",
+    headers,
+    body: data ? JSON.stringify(data) : undefined,
+    ...options,
   });
 
-  const parsed = await safeParseJSON(res); // [web:83]
-  if (!res.ok) throw toHttpError(res, parsed); // [web:83]
+  const parsed = await safeParseJSON(res);
+  if (!res.ok) throw toHttpError(res, parsed);
 
-  return parsed as T; // [web:83]
+  return parsed as T;
 }
 
 // == QUERY FUNCTION ==
-type UnauthorizedBehavior = "returnNull" | "throw"; // [web:83]
+type UnauthorizedBehavior = "returnNull" | "throw";
 
 export const getQueryFn =
   <T>({ on401 }: { on401: UnauthorizedBehavior }): QueryFunction<T> =>
   async ({ queryKey }) => {
     const token =
-      typeof window !== "undefined" ? localStorage.getItem("token") : null; // [web:83]
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     const headers: HeadersInit = {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}), // [web:121]
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
 
-    const url = queryKey[0] as string; // [web:83]
-    const isAbsolute = url.startsWith("http"); // [web:83]
-    const finalUrl = isAbsolute ? url : `${API_BASE_URL}${url}`; // [web:83]
+    const url = queryKey as string;
+    const isAbsolute = url.startsWith("http");
+    const finalUrl = isAbsolute ? url : `${API_BASE_URL}${url}`;
 
-    const res = await fetch(finalUrl, { credentials: "include", headers }); // [web:121][web:83]
+    const res = await fetch(finalUrl, {
+      // Avoid credentialed CORS for bearer-token reads as well
+      credentials: "omit",
+      headers,
+    });
 
     if (on401 === "returnNull" && res.status === 401) {
-      return null as unknown as T; // [web:83]
+      return null as unknown as T;
     }
 
-    const parsed = await safeParseJSON(res); // [web:83]
-    if (!res.ok) throw toHttpError(res, parsed); // [web:83]
+    const parsed = await safeParseJSON(res);
+    if (!res.ok) throw toHttpError(res, parsed);
 
-    return parsed as T; // [web:83]
+    return parsed as T;
   };
 
 // == QUERY CLIENT CONFIGURATION ==
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }), // [web:83]
-      refetchInterval: false, // [web:83]
-      refetchOnWindowFocus: false, // [web:83]
-      staleTime: Infinity, // [web:83]
-      retry: false, // [web:83]
+      queryFn: getQueryFn({ on401: "throw" }),
+      refetchInterval: false,
+      refetchOnWindowFocus: false,
+      staleTime: Infinity,
+      retry: false,
     },
     mutations: {
-      retry: false, // [web:83]
+      retry: false,
     },
   },
-}); // [web:83]
+});
