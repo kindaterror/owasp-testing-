@@ -21,7 +21,7 @@ function toHttpError(res: Response, body: any): Error {
 
 // == API BASE URL ==
 // Build-time injected; never fallback silently in production.
-const rawBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const rawBase = process.env.NEXT_PUBLIC_API_BASE_URL || "https://schoolsomething.onrender.com";
 const API_BASE_URL = rawBase.replace(/\/+$/, ""); // trim trailing slash
 
 if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
