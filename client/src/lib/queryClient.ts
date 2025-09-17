@@ -20,18 +20,15 @@ function toHttpError(res: Response, body: any): Error {
 }
 
 // == API BASE URL ==
-// Use env for production and localhost for dev; NEXT_PUBLIC_* is exposed to the browser.
+// In Vite, only VITE_* vars are exposed to client code via import.meta.env. [web:294]
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://your-backend.onrender.com";
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_BASE_URL) ||
+  "https://your-backend.onrender.com"; // fallback for dev or missing env
 
-// Optional guard to fail fast if missing in production builds.
-if (
-  typeof window !== "undefined" &&
-  process.env.NODE_ENV === "production" &&
-  !process.env.NEXT_PUBLIC_API_BASE_URL
-) {
+// Optional guard to fail fast if missing in production builds (requires rebuild to take effect). [web:296]
+if (typeof window !== "undefined" && import.meta.env?.PROD && !import.meta.env?.VITE_API_BASE_URL) {
   // eslint-disable-next-line no-console
-  console.warn("Missing NEXT_PUBLIC_API_BASE_URL; falling back to localhost");
+  console.warn("Missing VITE_API_BASE_URL; using fallback https://your-backend.onrender.com");
 }
 
 // == API REQUEST FUNCTION ==
@@ -45,7 +42,7 @@ export async function apiRequest<T = any>(
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}), // server must allow Authorization in CORS [web:194]
     ...(options?.headers || {}),
   };
 
@@ -57,8 +54,7 @@ export async function apiRequest<T = any>(
 
   const res = await fetch(fullUrl, {
     method,
-    // Important: do NOT send cookies for bearer-token auth to avoid credentialed CORS
-    // which requires Allow-Credentials and stricter preflights.
+    // Avoid credentialed CORS for bearer-token flows. [web:174][web:193]
     credentials: "omit",
     headers,
     body: data ? JSON.stringify(data) : undefined,
@@ -77,20 +73,18 @@ type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn =
   <T>({ on401 }: { on401: UnauthorizedBehavior }): QueryFunction<T> =>
   async ({ queryKey }) => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     const headers: HeadersInit = {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
 
-    const url = queryKey as string;
+    const url = queryKey[0] as string;
     const isAbsolute = url.startsWith("http");
     const finalUrl = isAbsolute ? url : `${API_BASE_URL}${url}`;
 
     const res = await fetch(finalUrl, {
-      // Avoid credentialed CORS for bearer-token reads as well
-      credentials: "omit",
+      credentials: "omit", // non-credentialed CORS for reads too [web:174][web:193]
       headers,
     });
 
